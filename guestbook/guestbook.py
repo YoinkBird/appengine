@@ -1,24 +1,45 @@
+import cgi
 from google.appengine.api import users
 import webapp2
 
-# Content-Type = 'text/plain' # https://en.wikipedia.org/wiki/Web_Server_Gateway_Interface#Example_application
+MAIN_PAGE_HTML = """\
+<html>
+  <body>
+    <form action="/sign" method="post">
+      <div>
+        <textarea name="content" rows="3" cols="60"></textarea>
+      </div>
+      <div>
+        <input type="submit" value="Sign Guestbook" />
+      </div>
+    </form>
+  </body>
+</html>
+"""
+
 class MainPage(webapp2.RequestHandler):
   def get(self):
-    # checks for active google account session
-    # If the user is already signed in to your application, get_current_user() returns the User object for the user.
-    #  Otherwise, it returns None.
-    user = users.get_current_user()
+    self.response.write(MAIN_PAGE_HTML)
 
-    if user:
-      self.response.headers['Content-Type'] = 'text/plain'
-      self.response.write('Hello , ' + user.nickname())
-    else:
-      # The redirect includes the URL to this page (self.request.uri) 
-      #   so the Google account sign-in mechanism will send the user back here
-      #   after the user has signed in or registered for a new account.
-      self.redirect(users.create_login_url(self.request.uri))
+class Guestbook(webapp2.RequestHandler):
+  def post(self):
+    writeStr = '<html><body>'
+    writeStr += 'You wrote:'
+    writeStr += '<pre>'
+    writeStr += cgi.escape(self.request.get('content'))
+    writeStr += '</pre>'
+    writeStr += '</body></html>'
+
+    self.response.write(writeStr)
 
 # debug = True    # print stack trace on errors
 application = webapp2.WSGIApplication(
-    [('/', MainPage),],
+    [
+      ('/', MainPage),
+      ('/sign', Guestbook),
+    ],
     debug = True)
+
+
+# NOTES:
+# Content-Type = 'text/plain' # https://en.wikipedia.org/wiki/Web_Server_Gateway_Interface#Example_application
